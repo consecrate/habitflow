@@ -1,0 +1,123 @@
+@startuml
+skinparam shadowing false
+hide circle
+skinparam linetype ortho
+title HabitFlow - Entity Relationship Diagram (PostgreSQL)
+entity users {
+  * id : SERIAL <<PK>>
+  --
+  * username : VARCHAR(20) <<UNIQUE>>
+  * display_name : VARCHAR(50)
+  * password_hash : VARCHAR(100)
+  * salt : VARCHAR(50)
+  failed_attempts : INT
+  locked_until : TIMESTAMP
+  coins : INT  CHECK >= 0
+  created_at : TIMESTAMP
+}
+entity categories {
+  * id : SERIAL <<PK>>
+  --
+  * user_id : INT <<FK>>
+  * name : VARCHAR(30)
+  color : VARCHAR(7)
+}
+entity habits {
+  * id : SERIAL <<PK>>
+  --
+  * user_id : INT <<FK>>
+  category_id : INT <<FK>>
+  * name, type, target, unit
+  * schedule_type, schedule_param
+  color, shared, archived, created_on
+}
+entity check_ins {
+  * id : SERIAL <<PK>>
+  --
+  * habit_id : INT <<FK>>
+  * day : DATE
+  value : NUMERIC
+  note, frozen, coins_awarded
+  UNIQUE(habit_id, day)
+}
+entity journal_entries {
+  * user_id : INT <<PK,FK>>
+  * day : DATE <<PK>>
+  --
+  mood : SMALLINT (1-5)
+  note : VARCHAR(500)
+}
+entity coin_ledger {
+  * id : SERIAL <<PK>>
+  --
+  * user_id : INT <<FK>>
+  delta : INT
+  reason : VARCHAR(100)
+  created_at : TIMESTAMP
+}
+entity power_ups {
+  * code : VARCHAR(20) <<PK>>
+  --
+  name, description
+  price : INT
+}
+entity user_power_ups {
+  * user_id : INT <<PK,FK>>
+  * code : VARCHAR(20) <<PK,FK>>
+  --
+  qty : INT  CHECK >= 0
+}
+entity active_effects {
+  * id : SERIAL <<PK>>
+  --
+  user_id <<FK>>, code <<FK>>
+  expires_at : TIMESTAMP
+}
+entity achievements {
+  * code : VARCHAR(20) <<PK>>
+  --
+  name, description, reward
+}
+entity user_achievements {
+  * user_id <<PK,FK>>
+  * code <<PK,FK>>
+  --
+  earned_at : TIMESTAMP
+}
+entity reminders {
+  * id : SERIAL <<PK>>
+  --
+  habit_id <<FK, UNIQUE>>
+  remind_at : TIME
+  enabled : BOOLEAN
+}
+entity friendships {
+  * requester_id <<PK,FK>>
+  * addressee_id <<PK,FK>>
+  --
+  status : PENDING | ACCEPTED
+  created_at
+}
+entity audit_log {
+  * id : SERIAL <<PK>>
+  --
+  user_id <<FK>>
+  action, details, created_at
+}
+users ||--o{ categories
+users ||--o{ habits
+categories |o--o{ habits
+habits ||--o{ check_ins
+habits ||--o| reminders
+users ||--o{ journal_entries
+users ||--o{ coin_ledger
+users ||--o{ user_power_ups
+power_ups ||--o{ user_power_ups
+users ||--o{ active_effects
+power_ups ||--o{ active_effects
+users ||--o{ user_achievements
+achievements ||--o{ user_achievements
+users ||--o{ friendships : requester
+users ||--o{ friendships : addressee
+users ||--o{ audit_log
+@enduml

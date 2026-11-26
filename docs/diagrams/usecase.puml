@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+actor Visitor
+actor Member
+actor "Accountability\nPartner" as Partner
+Visitor <|-- Member
+rectangle HabitFlow {
+  Visitor -- (Register account)
+  Visitor -- (Log in)
+  Member -- (Create / edit / archive habit)
+  Member -- (Check in today)
+  Member -- (Backfill a past day)
+  Member -- (Search, filter, sort habits)
+  Member -- (View statistics & heatmap)
+  Member -- (Write mood journal)
+  Member -- (View mood insights)
+  Member -- (View achievements)
+  Member -- (Buy power-up)
+  Member -- (Use power-up)
+  Member -- (Set reminder)
+  Member -- (Export / import CSV)
+  Member -- (Send friend request)
+  Partner -- (Accept friend request)
+  Partner -- (View shared habits)
+  (Check in today) .> (Earn coins) : <<include>>
+  (Check in today) .> (Unlock achievement) : <<extend>>
+  (Log in) .> (Auto-apply streak freeze) : <<include>>
+  (Buy power-up) .> (Earn coins) : <<uses balance>>
+}
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+skinparam shadowing false
+skinparam componentStyle rectangle
+title HabitFlow - 3-tier MVC packages
+package "GUI tier  (com.habitflow.ui)" as ui {
+  [App] 
+  [LoginView]
+  [MainView]
+  [Page subclasses\nToday, Habits, Statistics,\nJournal, Achievements,\nFriends, Shop, Settings,\nHabitDetail]
+  [HabitEditorDialog]
+  [HeatmapCanvas]
+}
+package "Controller tier  (com.habitflow.controller)" as ctl {
+  [AuthController]
+  [HabitController]
+  [CheckInController]
+  [StatsController]
+  [ShopController]
+  [AchievementController]
+  [SocialController]
+  [ReminderController]
+  [ImportExportController]
+  [logic: StreakCalculator,\nStrengthScore, Correlation,\nPasswordHasher, CoinCalculator]
+}
+package "Database tier  (com.habitflow.db)" as db {
+  [Database]
+  [BaseDao<T> + 11 DAOs]
+}
+package "Model  (com.habitflow.model)\nshared by all tiers" as model {
+  [Habit, Schedule, PowerUp,\nUser, CheckIn, ...]
+}
+database "PostgreSQL 16\n14 tables" as pg
+ui --> ctl : method calls
+ctl --> db : method calls
+db --> pg : JDBC + SQL
+ui ..> model
+ctl ..> model
+db ..> model
+@enduml

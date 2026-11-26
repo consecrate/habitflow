@@ -1,0 +1,42 @@
+@startuml
+skinparam shadowing false
+hide members
+hide circle
+title Inheritance (analysis level)
+abstract class Person
+class User
+class Partner
+Person <|-- User
+Person <|-- Partner
+abstract class Habit
+class BooleanHabit
+class CountHabit
+class DurationHabit
+Habit <|-- BooleanHabit
+Habit <|-- CountHabit
+Habit <|-- DurationHabit
+interface Schedule
+abstract class DayBasedSchedule
+Schedule <|.. DayBasedSchedule
+Schedule <|.. TimesPerWeekSchedule
+DayBasedSchedule <|-- DailySchedule
+DayBasedSchedule <|-- WeekdaySchedule
+DayBasedSchedule <|-- EveryNDaysSchedule
+abstract class PowerUp
+PowerUp <|-- StreakFreeze
+PowerUp <|-- StreakRepair
+PowerUp <|-- DoubleCoins
+PowerUp <|-- RestDay
+abstract class "BaseDao<T>" as BaseDao
+BaseDao <|-- UserDao
+BaseDao <|-- HabitDao
+BaseDao <|-- CheckInDao
+class "CategoryDao, JournalDao, CoinDao,\nPowerUpDao, AchievementDao, ReminderDao,\nFriendDao, AuditDao" as MoreDaos
+BaseDao <|-- MoreDaos
+abstract class Page
+Page <|-- TodayPage
+Page <|-- HabitsPage
+Page <|-- StatsPage
+class "JournalPage, AchievementsPage,\nFriendsPage, ShopPage, SettingsPage,\nHabitDetailPage" as MorePages
+Page <|-- MorePages
+@enduml

@@ -1,0 +1,5 @@
+target/
+report/build/node_modules/
+report/build/package-lock.json
+*.class
+.DS_Store

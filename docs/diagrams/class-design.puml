@@ -1,0 +1,132 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+title HabitFlow - core class diagram
+
+package model {
+  abstract class Person {
+    - id : int {final}
+    - username : String {final}
+    - displayName : String
+    + getDisplayName() : String
+    + setDisplayName(String) : void
+    + {abstract} roleLabel() : String
+  }
+  class User {
+    - coins : int
+    + getCoins() : int
+    + roleLabel() : String
+  }
+  class Partner {
+    - sharedHabits : List<SharedHabit>
+    + roleLabel() : String
+  }
+  Person <|-- User
+  Person <|-- Partner
+
+  abstract class Habit {
+    - id : int
+    - name : String
+    - target : double
+    - schedule : Schedule
+    + {abstract} getType() : HabitType
+    + {abstract} isCompleted(double) : boolean
+    + {abstract} formatValue(double) : String
+    + progress(double) : double
+    + completeValue() : double
+  }
+  class BooleanHabit
+  class CountHabit
+  class DurationHabit
+  Habit <|-- BooleanHabit
+  Habit <|-- CountHabit
+  Habit <|-- DurationHabit
+
+  interface Schedule {
+    + isDue(LocalDate, LocalDate, Set) : boolean
+    + outcomes(LocalDate, LocalDate, Set) : List<Double>
+    + describe() : String
+    + streakUnit() : String
+    + {static} of(ScheduleType, int) : Schedule
+  }
+  abstract class DayBasedSchedule {
+    # {abstract} isDueDay(LocalDate, LocalDate) : boolean
+    + outcomes(...) : List<Double>
+  }
+  Schedule <|.. DayBasedSchedule
+  Schedule <|.. TimesPerWeekSchedule
+  DayBasedSchedule <|-- DailySchedule
+  DayBasedSchedule <|-- WeekdaySchedule
+  DayBasedSchedule <|-- EveryNDaysSchedule
+  Habit o--> "1" Schedule
+
+  abstract class PowerUp {
+    - code : String {final}
+    - price : int {final}
+    + {abstract} needsHabit() : boolean
+    + {abstract} apply(PowerUpContext, Habit) : String
+    + {static} create(...) : PowerUp
+  }
+  interface PowerUpContext {
+    + missedDueDays(Habit, int) : List<LocalDate>
+    + protectDays(Habit, List<LocalDate>) : void
+    + activateEffect(String, Duration) : void
+  }
+  PowerUp <|-- StreakFreeze
+  PowerUp <|-- StreakRepair
+  PowerUp <|-- DoubleCoins
+  PowerUp <|-- RestDay
+  PowerUp ..> PowerUpContext : uses
+}
+
+package controller {
+  class CheckInController {
+    + checkIn(Habit) : Result
+    + checkIn(Habit, double) : Result
+    + checkIn(Habit, double, LocalDate, String) : Result
+    + undo(Habit, LocalDate) : Result
+  }
+  interface CheckInListener {
+    + onCheckIn(Habit, LocalDate, boolean) : void
+  }
+  class AchievementController {
+    + evaluate() : List<Achievement>
+  }
+  class ShopController {
+    + buy(PowerUp) : void
+    + use(PowerUp, Habit) : String
+    + autoApplyFreezes() : List<String>
+  }
+  class "ShopController.Context" as Ctx
+  CheckInListener <|.. AchievementController
+  CheckInController o--> "*" CheckInListener : notifies
+  PowerUpContext <|.. Ctx
+  ShopController *-- Ctx
+  class StatsController
+  class HabitController
+}
+
+package db {
+  abstract class "BaseDao<T>" as BaseDao {
+    # {abstract} mapRow(ResultSet) : T
+    # queryList(String, Object...) : List<T>
+    # update(String, Object...) : int
+  }
+  class Database {
+    + {static} inTransaction(Supplier<R>) : R
+  }
+  class HabitDao
+  class CheckInDao
+  class UserDao
+  BaseDao <|-- HabitDao
+  BaseDao <|-- CheckInDao
+  BaseDao <|-- UserDao
+  BaseDao ..> Database
+}
+
+CheckInController --> CheckInDao
+CheckInController --> UserDao
+HabitController --> HabitDao
+ShopController --> UserDao
+HabitDao ..> Habit : creates
+@enduml
