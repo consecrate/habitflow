@@ -7,9 +7,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(__dirname, 'index.html');
 
-// Curated list of the 21 key files that explain how HabitFlow works end-to-end
+// Curated list of the 23 key files that explain how HabitFlow works end-to-end
 const filesToInclude = [
   // Model (Shared Domain)
+  'src/main/java/com/habitflow/model/Person.java',
+  'src/main/java/com/habitflow/model/User.java',
   'src/main/java/com/habitflow/model/Habit.java',
   'src/main/java/com/habitflow/model/Schedule.java',
   'src/main/java/com/habitflow/model/DayBasedSchedule.java',
@@ -175,9 +177,17 @@ function parseJava(content, fileName) {
   };
 }
 
-// Curated educational file guides for the 21 key files
+// Curated educational file guides for the 23 key files
 const FILE_GUIDES = {
   // Model (Shared Domain)
+  'src/main/java/com/habitflow/model/Person.java': {
+    summary: 'Abstract base class for human actors in the app (User and Partner). Encapsulates final id and username, a validated displayName, and an abstract roleLabel() method.',
+    why: 'Shares identity validation and final getters once across both the signed-in Member and read-only Accountability Partners while letting each subclass declare its own role.',
+  },
+  'src/main/java/com/habitflow/model/User.java': {
+    summary: 'Concrete Person subclass representing the signed-in Member account, adding a validated non-negative coin balance and returning "Member" from roleLabel().',
+    why: 'Separates mutable account state (coins) from read-only Partner objects so friends can never carry or mutate coin balances.',
+  },
   'src/main/java/com/habitflow/model/Habit.java': {
     summary: 'Abstract base class for every habit in the app (Boolean, Count, and Duration). Holds shared fields like name, target, schedule, and color, while letting subclasses decide what "completed" means.',
     why: 'Because Habit is abstract, controllers and UI pages can treat every habit the same way—calling h.isCompleted(val) or h.formatValue(val)—without scattering if/else checks for each habit type.',
@@ -308,8 +318,35 @@ function cleanJavadoc(lines, beforeIdx) {
   return { text, startIdx: j };
 }
 
-// Curated educational walkthroughs for every key method across all 21 key files
+// Curated educational walkthroughs for every key method across all 23 key files
 const SECTION_GUIDES = {
+  // --- Model: Person & User ---
+  'Person.Person': {
+    goal: 'Initialize immutable identity fields (id, username) and validate the display name.',
+    how: 'Protected constructor sets final id and username, then calls setDisplayName() so construction and updates share the exact same validation rule.',
+    why: 'Calling the validating setter in the constructor guarantees no subclass can ever create a Person with a blank name.',
+  },
+  'Person.setDisplayName': {
+    goal: 'Guarantee every person always has a non-blank, trimmed display name.',
+    how: 'Throws IllegalArgumentException if null or blank, otherwise trims leading/trailing whitespace.',
+    why: 'Enforces encapsulation at the model boundary before any controller or DAO writes to PostgreSQL.',
+  },
+  'Person.roleLabel': {
+    goal: 'Return the human-readable role name for this person ("Member" or "Accountability partner").',
+    how: 'Abstract method overridden by User and Partner.',
+    why: 'Lets UI screens display a person\'s role polymorphically without checking instanceof.',
+  },
+  'User.setCoins': {
+    goal: 'Prevent a User\'s coin balance from ever becoming negative in memory.',
+    how: 'Throws IllegalArgumentException if coins < 0 before assigning the private coins field.',
+    why: 'Pairs model-level encapsulation with PostgreSQL\'s CHECK (coins >= 0) constraint for defense in depth.',
+  },
+  'User.roleLabel': {
+    goal: 'Identify a signed-in account as a "Member".',
+    how: 'Overrides abstract Person.roleLabel() to return the literal string "Member".',
+    why: 'Distinguishes full members from unauthenticated Visitors (LoginView) and read-only Partners.',
+  },
+
   // --- Model: Habit ---
   'Habit.getType': {
     goal: 'Identify which kind of habit this object is (BOOLEAN, COUNT, or DURATION).',
@@ -2262,7 +2299,8 @@ ul.tight li { margin-bottom: 4px; }
 <nav class="tabs-bar" role="tablist" aria-label="Explorer sections">
   <button type="button" role="tab" id="tab-overview" aria-selected="true" tabindex="0">1. Overview &amp; Flows</button>
   <button type="button" role="tab" id="tab-explorer" aria-selected="false" tabindex="-1">2. Key Files Explorer</button>
-  <button type="button" role="tab" id="tab-visuals" aria-selected="false" tabindex="-1">3. Hierarchies, Schema &amp; Screens</button>
+  <button type="button" role="tab" id="tab-rubric" aria-selected="false" tabindex="-1">3. OOP &amp; Rubric Map</button>
+  <button type="button" role="tab" id="tab-visuals" aria-selected="false" tabindex="-1">4. Hierarchies, Schema &amp; Screens</button>
 </nav>
 
 <main>
@@ -2430,7 +2468,26 @@ ul.tight li { margin-bottom: 4px; }
     </div>
   </section>
 
-  <!-- TAB 3: SCHEMA, HIERARCHIES & SCREENS -->
+  <!-- TAB 3: OOP & RUBRIC MAP -->
+  <section role="tabpanel" id="panel-rubric" aria-labelledby="tab-rubric" hidden="until-found">
+    <div class="panel-inner">
+      <h2 class="section-title">OOP &amp; Rubric Traceability Map (Click Any Citation to Jump to Code)</h2>
+      <p class="muted small" style="margin-top:-6px;margin-bottom:14px">Every OOP and 3-tier requirement mapped directly to the exact files and line numbers that answer it in HabitFlow.</p>
+      <table class="data-table" id="rubricTable">
+        <thead>
+          <tr>
+            <th style="width:20%">Rubric Requirement</th>
+            <th style="width:10%">Layer</th>
+            <th style="width:36%">How HabitFlow Answers It</th>
+            <th style="width:34%">Exact Code Citations</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 4: SCHEMA, HIERARCHIES & SCREENS -->
   <section role="tabpanel" id="panel-visuals" aria-labelledby="tab-visuals" hidden="until-found">
     <div class="panel-inner">
       <h2 class="section-title">Core OOP Inheritance &amp; Interface Hierarchies</h2>
@@ -3083,8 +3140,87 @@ ul.tight li { margin-bottom: 4px; }
     if (!e.target.closest('.search-wrap')) searchResults.classList.remove('open');
   });
 
-  // --- Tab 3: Hierarchies, Schema, Screens ---
+  // --- Tab 3: OOP & Rubric Table ---
+  const RUBRIC = [
+    {
+      req: '3-Tier Architecture',
+      owner: 'ALL',
+      how: 'Strict GUI (ui) → Controller (controller + logic) → Database (db) with shared pure Model (model). UI only talks to controllers via AppContext and never imports java.sql or com.habitflow.db.',
+      refs: [['App.java:12', 'src/main/java/com/habitflow/ui/App.java', 12], ['AppContext.java:6', 'src/main/java/com/habitflow/ui/AppContext.java', 6], ['CheckInController.java:14', 'src/main/java/com/habitflow/controller/CheckInController.java', 14], ['Database.java:17', 'src/main/java/com/habitflow/db/Database.java', 17]],
+    },
+    {
+      req: 'Package Hierarchy & Access Control',
+      owner: 'ALL',
+      how: 'Uses public, private, protected, default (package-private), final, and static to lock tier boundaries: Database.with() stays in db, Session.start/end & HabitStats stay in controller, and all UI screens stay package-private inside ui.',
+      refs: [['Database.with():58', 'src/main/java/com/habitflow/db/Database.java', 58], ['Session.start():25', 'src/main/java/com/habitflow/controller/Session.java', 25], ['HabitStats:13', 'src/main/java/com/habitflow/controller/HabitStats.java', 13], ['Page.java:9', 'src/main/java/com/habitflow/ui/Page.java', 9]],
+    },
+    {
+      req: 'Abstract Classes (6 hierarchies)',
+      owner: 'M',
+      how: 'Every abstract class mixes abstract hooks with concrete/final shared behavior: Person, Habit, DayBasedSchedule, PowerUp, BaseDao<T>, and Page.',
+      refs: [['Person.java:4', 'src/main/java/com/habitflow/model/Person.java', 4], ['Habit.java:9', 'src/main/java/com/habitflow/model/Habit.java', 9], ['DayBasedSchedule.java:9', 'src/main/java/com/habitflow/model/DayBasedSchedule.java', 9], ['PowerUp.java:4', 'src/main/java/com/habitflow/model/PowerUp.java', 4], ['BaseDao.java:20', 'src/main/java/com/habitflow/db/BaseDao.java', 20], ['Page.java:9', 'src/main/java/com/habitflow/ui/Page.java', 9]],
+    },
+    {
+      req: 'Interfaces (5 defined & implemented)',
+      owner: 'C',
+      how: 'Schedule (with default & static methods), PowerUpContext (implemented by ShopController.Context), CheckInListener (Observer), Database.SqlWork, and BaseDao.RowMapper.',
+      refs: [['Schedule.java:11', 'src/main/java/com/habitflow/model/Schedule.java', 11], ['ShopController.Context:101', 'src/main/java/com/habitflow/controller/ShopController.java', 101], ['Database.SqlWork:25', 'src/main/java/com/habitflow/db/Database.java', 25], ['BaseDao.RowMapper:70', 'src/main/java/com/habitflow/db/BaseDao.java', 70]],
+    },
+    {
+      req: 'Method Overloading & call-by-value',
+      owner: 'C',
+      how: 'CheckInController.checkIn (3 overloads), StrengthScore.compute (2), Database.inTransaction (2), and Schedule.formatStreak (2). Primitive double is passed by value; Habit reference is copied by value.',
+      refs: [['CheckInController:35', 'src/main/java/com/habitflow/controller/CheckInController.java', 35], ['StrengthScore:15', 'src/main/java/com/habitflow/controller/logic/StrengthScore.java', 15], ['Database:69', 'src/main/java/com/habitflow/db/Database.java', 69], ['Schedule:32', 'src/main/java/com/habitflow/model/Schedule.java', 32]],
+    },
+    {
+      req: 'Method Overriding (@Override)',
+      owner: 'M',
+      how: 'Habit subtypes, 4 Schedule classes, 4 PowerUps, User/Partner roleLabel(), 11 DAOs overriding BaseDao.mapRow(), and 9 JavaFX screens overriding Page.title() & Page.build().',
+      refs: [['User.roleLabel:19', 'src/main/java/com/habitflow/model/User.java', 19], ['DayBasedSchedule:14', 'src/main/java/com/habitflow/model/DayBasedSchedule.java', 14], ['TimesPerWeekSchedule:35', 'src/main/java/com/habitflow/model/TimesPerWeekSchedule.java', 35], ['HabitDao.mapRow:20', 'src/main/java/com/habitflow/db/HabitDao.java', 20], ['TodayPage:24', 'src/main/java/com/habitflow/ui/TodayPage.java', 24]],
+    },
+    {
+      req: 'Encapsulation, Inheritance & Polymorphism',
+      owner: 'M',
+      how: 'Validating setters + DB CHECK constraints; 6 inheritance trees; runtime dispatch in HabitStats.summarize(), ShopController.use(), HabitDao.mapRow(), and MainView.show(Page).',
+      refs: [['Habit.setName:51', 'src/main/java/com/habitflow/model/Habit.java', 51], ['HabitStats.summarize:23', 'src/main/java/com/habitflow/controller/HabitStats.java', 23], ['ShopController.use:59', 'src/main/java/com/habitflow/controller/ShopController.java', 59], ['MainView.show:105', 'src/main/java/com/habitflow/ui/MainView.java', 105]],
+    },
+    {
+      req: 'Persistent Storage (14 SQL Tables)',
+      owner: 'M',
+      how: 'PostgreSQL 16 via raw JDBC (no ORM) across 14 normalized tables with PreparedStatement parameter binding, foreign keys, CHECK constraints, and atomic transactions.',
+      refs: [['schema.sql:3', 'src/main/resources/schema.sql', 3], ['Database.java:69', 'src/main/java/com/habitflow/db/Database.java', 69], ['BaseDao.prepare:74', 'src/main/java/com/habitflow/db/BaseDao.java', 74], ['HabitDao.java:53', 'src/main/java/com/habitflow/db/HabitDao.java', 53]],
+    },
+    {
+      req: 'GUI (11 Screens) & Event Handling',
+      owner: 'V',
+      how: 'JavaFX 21 desktop GUI with 11 screens/dialogs. Button actions flow GUI → Controller → DAO, including PostgreSQL SERIAL RETURNING id auto-generated keys.',
+      refs: [['App.java:17', 'src/main/java/com/habitflow/ui/App.java', 17], ['MainView.createHabit:116', 'src/main/java/com/habitflow/ui/MainView.java', 116], ['TodayPage.controls:113', 'src/main/java/com/habitflow/ui/TodayPage.java', 113], ['BaseDao.insert:65', 'src/main/java/com/habitflow/db/BaseDao.java', 65]],
+    },
+    {
+      req: 'Core Functions & User Roles',
+      owner: 'C',
+      how: 'Registration & 5-attempt lockout login (AuthController), check-ins & mood journal (CheckInController), power-up shop (ShopController), and 3 roles: Visitor, Member (User), and read-only Accountability Partner.',
+      refs: [['AuthController.login:34', 'src/main/java/com/habitflow/controller/AuthController.java', 34], ['CheckInController:45', 'src/main/java/com/habitflow/controller/CheckInController.java', 45], ['ShopController.buy:41', 'src/main/java/com/habitflow/controller/ShopController.java', 41], ['Person.java:25', 'src/main/java/com/habitflow/model/Person.java', 25], ['User.java:19', 'src/main/java/com/habitflow/model/User.java', 19]],
+    },
+  ];
+
+  document.querySelector('#rubricTable tbody').innerHTML = RUBRIC.map(row => \`
+    <tr>
+      <td><strong>\${esc(row.req)}</strong></td>
+      <td><span class="badge badge-\${row.owner}">\${row.owner}</span></td>
+      <td>\${esc(row.how)}</td>
+      <td style="display:flex;flex-wrap:wrap;gap:5px">
+        \${row.refs.map(([lbl, file, ln]) => \`<button type="button" class="link-chip" data-open="\${esc(file)}" data-line="\${ln}">\${esc(lbl)}</button>\`).join('')}
+      </td>
+    </tr>
+  \`).join('');
+
+  // --- Tab 4: Hierarchies, Schema, Screens ---
   const HIERARCHIES = [
+    { role: 'M', root: 'abstract class Person', file: 'src/main/java/com/habitflow/model/Person.java', kids: [
+      ['User (Member)', 'src/main/java/com/habitflow/model/User.java'],
+      ['Partner (Read-only)', null],
+    ]},
     { role: 'M', root: 'abstract class Habit', file: 'src/main/java/com/habitflow/model/Habit.java', kids: [
       ['BooleanHabit', null],
       ['CountHabit', null],
@@ -3126,10 +3262,6 @@ ul.tight li { margin-bottom: 4px; }
       ['FriendsPage', null],
       ['ShopPage', null],
       ['SettingsPage', null],
-    ]},
-    { role: 'M', root: 'abstract class Person', file: null, kids: [
-      ['User (Member)', null],
-      ['Partner (Read-only)', null],
     ]},
   ];
 
